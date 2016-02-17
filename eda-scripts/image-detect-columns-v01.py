@@ -90,48 +90,19 @@ print tab(), subheader('Loading image'), highlight(inputFile), 'to memory'
 originalImage                           =   cv2.imread(inputFile)
 print tab(), done()
 print tab(2), 'it is ', highlight(originalImage.shape[0]), 'px tall by ', highlight(originalImage.shape[1]), 'px wide'
+midY                                    =   int(originalImage.shape[1]/2)
 
-# generate pseudo image
-print tab(), subheader('Generating pseudo image'), 'with same dimensions'
-pseudoImage                             =   cv2.imread(inputFile, 0)# np.zeros((originalImage.shape[0],originalImage.shape[1], 1), np.int8)
-pseudoImage[:]                          =   255
-for (rowId, box) in df.iterrows():
-    cv2.line(pseudoImage, (box['x0'], box['y0']), (box['x0'], box['y1']), (0), 1)
-print tab(), done()
+# find the x-value frequencies
+print tab(), subheader('calculating and drawing x-value frequencies')
+x0Counts                                =   df['x0'].value_counts()
+for (pos, count) in x0Counts.iteritems():
+    cv2.line(originalImage, (pos, (midY - count*50)), (pos, (midY+count*50)), (0,0,255), 3)
 
-# cv2.imwrite(outputFile, pseudoImage)
-# sys.exit()
+df['x0_100']                            =   df['x0']/100
+x0_100Counts                            =   df['x0_100'].value_counts()
+midY                                    +=  1000
+for (pos, count) in x0_100Counts.iteritems():
+    cv2.line(originalImage, (int(pos)*100, (midY - int(count*10))), (int(pos)*100, (midY+int(count*10))), (255,0,0), 3)
 
-print tab(), subheader('Saving pseudo image as'), highlight('pseudo-{0}'.format(outputFile))
-cv2.imwrite('pseudo-{0}'.format(outputFile), pseudoImage)
-print tab(), done()
 
-# hough line detection?
-# print tab(), subheader('detecting edges')
-# edges = cv2.Canny(pseudoImage,50,150,apertureSize = 3)
-# print tab(), done()
-
-print tab(), subheader('detecting lines')
-lines                                   =   cv2.HoughLines(pseudoImage,1,np.pi/180,200)
-print tab(), done()
-
-print tab(), subheader('drawing lines on original image')
-for rho,theta in lines[0]:
-    a = np.cos(theta)
-    b = np.sin(theta)
-    x0 = a*rho
-    y0 = b*rho
-    x1 = int(x0 + 1000*(-b))
-    y1 = int(y0 + 1000*(a))
-    x2 = int(x0 - 1000*(-b))
-    y2 = int(y0 - 1000*(a))
-
-    cv2.line(originalImage,(x1,y1),(x2,y2),(0,0,255),2)
-print tab(), done()
-
-print tab(), subheader('saving output image as'), highlight(outputFile)
 cv2.imwrite(outputFile, originalImage)
-print tab(), done()
-
-# detect columns
-print df.describe()
